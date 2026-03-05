@@ -72,18 +72,18 @@ export default function Login() {
       </div>
 
       {/* Right: login form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-surface">
-        <div className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="lg:hidden text-center mb-8">
-            <img
-              src="/assets/logo-dark.png"
-              alt="YourWayPT"
-              className="h-20 w-auto object-contain mx-auto mb-2"
-            />
-          </div>
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center bg-surface">
+        {/* Mobile logo banner — donkerblauw */}
+        <div className="lg:hidden w-full flex items-center justify-center py-8 px-6" style={{ backgroundColor: '#063854' }}>
+          <img
+            src="/assets/logo-white.png"
+            alt="YourWayPT"
+            className="h-20 w-auto object-contain"
+          />
+        </div>
 
-          <h2 className="text-2xl font-bold font-heading text-brand-700 mb-2">
+        <div className="w-full max-w-sm p-6 lg:p-0">
+          <h2 className="text-2xl font-bold font-heading text-brand-700 mb-2 mt-6 lg:mt-0">
             {mode === 'login' ? 'Inloggen' : 'Account aanmaken'}
           </h2>
           <p className="text-dark-muted text-sm mb-8">

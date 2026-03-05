@@ -98,20 +98,20 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
+      <div className="flex items-start justify-between gap-3 mb-8">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-brand-700">Dashboard</h1>
           <p className="text-dark-muted mt-1">Welkom terug, {trainer?.name}!</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={openSearchMode} className="btn-secondary text-sm">
-            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+          <button onClick={openSearchMode} className="btn-secondary text-sm whitespace-nowrap min-h-[44px]">
+            <svg className="w-4 h-4 mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
             Zoek klant
           </button>
-          <button onClick={() => setShowAddForm(true)} className="btn-primary">
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={() => setShowAddForm(true)} className="btn-primary whitespace-nowrap min-h-[44px]">
+            <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             <span className="hidden sm:inline">Klant toevoegen</span>
@@ -181,13 +181,13 @@ export default function Dashboard() {
                     <div className="flex gap-2 flex-shrink-0">
                       <button
                         onClick={() => navigate(`/clients/${client.id}`)}
-                        className="btn-secondary text-xs px-3 min-h-[44px]"
+                        className="btn-secondary text-xs px-2 sm:px-3 min-h-[44px] whitespace-nowrap"
                       >
                         Bekijken
                       </button>
                       <button
                         onClick={() => navigate(`/log-workout?clientId=${client.id}`)}
-                        className="btn-primary text-xs px-3 min-h-[44px]"
+                        className="btn-primary text-xs px-2 sm:px-3 min-h-[44px] whitespace-nowrap"
                       >
                         Log
                       </button>
@@ -336,13 +336,13 @@ export default function Dashboard() {
                   <div className="flex gap-2">
                     <button
                       onClick={e => { e.stopPropagation(); navigate(`/log-workout?clientId=${client.id}`) }}
-                      className="btn-primary flex-1 text-xs"
+                      className="btn-primary flex-1 text-xs min-h-[44px] whitespace-nowrap"
                     >
                       Log workout
                     </button>
                     <button
                       onClick={e => { e.stopPropagation(); navigate(`/progress/${client.id}`) }}
-                      className="btn-secondary flex-1 text-xs"
+                      className="btn-secondary flex-1 text-xs min-h-[44px] whitespace-nowrap"
                     >
                       Voortgang
                     </button>

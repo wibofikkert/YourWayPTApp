@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const navItems = [
@@ -62,11 +62,13 @@ export default function Layout() {
       >
         {/* Logo */}
         <div className="flex items-center justify-center px-6 py-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
-          <img
-            src="/assets/logo-white.png"
-            alt="YourWayPT"
-            className="h-14 w-auto object-contain"
-          />
+          <Link to="/" onClick={() => setSidebarOpen(false)}>
+            <img
+              src="/assets/logo-white.png"
+              alt="YourWayPT"
+              className="h-14 w-auto object-contain"
+            />
+          </Link>
         </div>
 
         {/* Navigation */}
@@ -125,7 +127,9 @@ export default function Layout() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <img src="/assets/logo-white.png" alt="YourWayPT" className="h-8 w-auto object-contain" />
+          <Link to="/">
+            <img src="/assets/logo-white.png" alt="YourWayPT" className="h-8 w-auto object-contain" />
+          </Link>
         </header>
 
         {/* Page content */}
