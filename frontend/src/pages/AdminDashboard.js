@@ -57,8 +57,8 @@ function TrainerModal({ trainer, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border sticky top-0 bg-white z-10">
           <h3 className="font-bold font-heading text-dark text-lg">
             {trainer ? 'Trainer bewerken' : 'Nieuwe trainer'}
           </h3>
@@ -444,13 +444,13 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => setModal(trainer)} className="icon-btn text-dark-subtle hover:text-brand-700 transition-colors" title="Bewerken">
+                        <button onClick={() => setModal(trainer)} className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded text-dark-subtle hover:text-brand-700 transition-colors" title="Bewerken">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
                         {!trainer.is_admin && (
-                          <button onClick={() => setDeleteConfirm(trainer)} className="icon-btn text-dark-subtle hover:text-red-600 transition-colors" title="Verwijderen">
+                          <button onClick={() => setDeleteConfirm(trainer)} className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded text-dark-subtle hover:text-red-600 transition-colors" title="Verwijderen">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
@@ -470,11 +470,11 @@ export default function AdminDashboard() {
                         ) : (
                           <div className="mt-2 space-y-1">
                             {trainerClients[trainer.id].map(client => (
-                              <div key={client.id} className="flex items-center justify-between py-1.5 px-3 rounded" style={{ backgroundColor: 'rgba(6,56,84,0.04)' }}>
+                              <div key={client.id} className="flex items-center justify-between py-1 px-3 rounded" style={{ backgroundColor: 'rgba(6,56,84,0.04)' }}>
                                 <span className="text-sm text-dark">{client.name}</span>
                                 <button
                                   onClick={() => setReassignClient({ ...client, trainer_id: trainer.id })}
-                                  className="text-xs text-brand-700 hover:underline font-medium"
+                                  className="text-xs text-brand-700 hover:underline font-medium min-h-[44px] px-2"
                                 >
                                   Verplaatsen
                                 </button>

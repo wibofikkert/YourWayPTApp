@@ -36,11 +36,11 @@ export default function ExerciseSearch({ exercises, onSelect, onClose }) {
   }, [exercises, query, selectedMuscle])
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between p-4 border-b border-surface-border">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded shadow-xl w-full max-w-lg max-h-[90vh] sm:max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 border-b border-surface-border flex-shrink-0">
           <h3 className="font-semibold font-heading text-brand-700 uppercase tracking-wider text-sm">Oefening kiezen</h3>
-          <button onClick={onClose} className="text-dark-subtle hover:text-dark">
+          <button onClick={onClose} className="flex items-center justify-center min-h-[52px] min-w-[44px] text-dark-subtle hover:text-dark -mr-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -84,7 +84,7 @@ export default function ExerciseSearch({ exercises, onSelect, onClose }) {
                 <li key={ex.id}>
                   <button
                     onClick={() => { onSelect(ex); onClose() }}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-surface-hover transition-colors text-left"
+                    className="w-full flex items-center justify-between px-4 py-3 min-h-[52px] hover:bg-surface-hover transition-colors text-left"
                   >
                     <div>
                       <p className="text-sm font-medium font-heading text-dark">{ex.name}</p>

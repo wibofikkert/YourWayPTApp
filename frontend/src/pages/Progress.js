@@ -64,7 +64,7 @@ export default function Progress() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <button onClick={() => navigate(`/clients/${clientId}`)} className="flex items-center gap-1 text-sm text-dark-muted hover:text-dark-light mb-6">
+      <button onClick={() => navigate(`/clients/${clientId}`)} className="flex items-center gap-1 text-sm text-dark-muted hover:text-dark-light mb-6 min-h-[44px] -ml-1 pr-3">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -142,7 +142,7 @@ export default function Progress() {
                       </span>
                     </div>
                     <select
-                      className="input w-auto text-sm"
+                      className="input text-sm w-full sm:w-auto max-w-[160px]"
                       value={metric}
                       onChange={e => setMetric(e.target.value)}
                     >
@@ -170,7 +170,7 @@ export default function Progress() {
                   <div className="card p-0 overflow-hidden">
                     <h4 className="font-semibold text-dark px-4 sm:px-6 py-4 border-b border-surface-border">Geschiedenis</h4>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm" style={{ minWidth: '420px' }}>
+                      <table className="w-full text-sm" style={{ minWidth: '320px' }}>
                         <thead>
                           <tr className="text-left text-dark-subtle text-xs font-semibold font-heading uppercase tracking-wider bg-surface border-b border-surface-border">
                             <th className="px-4 sm:px-6 py-3">Datum</th>

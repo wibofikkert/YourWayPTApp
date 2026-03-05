@@ -181,13 +181,13 @@ export default function Dashboard() {
                     <div className="flex gap-2 flex-shrink-0">
                       <button
                         onClick={() => navigate(`/clients/${client.id}`)}
-                        className="btn-secondary text-xs px-3 py-2"
+                        className="btn-secondary text-xs px-3 min-h-[44px]"
                       >
                         Bekijken
                       </button>
                       <button
                         onClick={() => navigate(`/log-workout?clientId=${client.id}`)}
-                        className="btn-primary text-xs px-3 py-2"
+                        className="btn-primary text-xs px-3 min-h-[44px]"
                       >
                         Log
                       </button>
@@ -251,7 +251,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
         <div className="card text-center">
           <p className="text-3xl font-bold text-brand-700">{clients.length}</p>
           <p className="text-sm text-dark-muted mt-1">Klanten</p>

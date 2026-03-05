@@ -79,7 +79,7 @@ export default function Login() {
             <img
               src="/assets/logo-dark.png"
               alt="YourWayPT"
-              className="h-16 w-auto object-contain mx-auto"
+              className="h-20 w-auto object-contain mx-auto mb-2"
             />
           </div>
 
@@ -144,7 +144,7 @@ export default function Login() {
             {mode === 'login' ? 'Nog geen account?' : 'Al een account?'}{' '}
             <button
               onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
-              className="text-brand-500 hover:text-brand-700 font-semibold font-heading"
+              className="text-brand-500 hover:text-brand-700 font-semibold font-heading inline-flex items-center min-h-[44px] px-1"
             >
               {mode === 'login' ? 'Registreer hier' : 'Inloggen'}
             </button>

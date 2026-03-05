@@ -78,7 +78,7 @@ export default function Layout() {
               end={item.end}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-3 rounded text-sm font-heading font-semibold tracking-wider uppercase transition-all ${
+                `flex items-center gap-3 px-3 py-3.5 min-h-[48px] rounded text-sm font-heading font-semibold tracking-wider uppercase transition-all ${
                   isActive
                     ? 'bg-white text-brand-700 shadow-sm'
                     : 'text-white hover:bg-white hover:bg-opacity-10'
@@ -104,7 +104,7 @@ export default function Layout() {
             </div>
             <button
               onClick={handleLogout}
-              className="icon-btn transition-opacity hover:opacity-100"
+              className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded transition-opacity hover:opacity-100"
               style={{ color: 'rgba(255,255,255,0.55)' }}
               title="Uitloggen"
             >
@@ -119,8 +119,8 @@ export default function Layout() {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile header */}
-        <header className="lg:hidden flex items-center gap-3 px-3 py-2 flex-shrink-0" style={{ backgroundColor: '#063854', minHeight: '56px' }}>
-          <button onClick={() => setSidebarOpen(true)} className="icon-btn flex-shrink-0" style={{ color: 'rgba(255,255,255,0.9)' }}>
+        <header className="lg:hidden flex items-center gap-2 px-2 flex-shrink-0" style={{ backgroundColor: '#063854', minHeight: '56px' }}>
+          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center flex-shrink-0 min-h-[56px] min-w-[44px] px-2" style={{ color: 'rgba(255,255,255,0.9)' }}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
