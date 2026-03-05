@@ -141,9 +141,9 @@ export default function AdminDashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [error, setError] = useState('')
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loadData() {
