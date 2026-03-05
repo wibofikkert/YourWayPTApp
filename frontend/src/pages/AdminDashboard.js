@@ -132,6 +132,73 @@ function TrainerModal({ trainer, onClose, onSave }) {
   )
 }
 
+function ReassignModal({ client, trainers, onClose, onSaved }) {
+  const { api } = useAuth()
+  const [selectedTrainerId, setSelectedTrainerId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const otherTrainers = trainers.filter(t => t.id !== client.trainer_id && t.is_active)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!selectedTrainerId) return
+    setSaving(true)
+    setError('')
+    try {
+      const res = await api.put(`/admin/clients/${client.id}/reassign`, { trainer_id: parseInt(selectedTrainerId) })
+      onSaved(res.data)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Er ging iets mis.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-border">
+          <h3 className="font-bold font-heading text-dark text-lg">Klant verplaatsen</h3>
+          <button onClick={onClose} className="text-dark-subtle hover:text-dark p-1">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+          {error && <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{error}</div>}
+          <p className="text-sm text-dark-muted">
+            Verplaats <strong>{client.name}</strong> naar een andere trainer.
+          </p>
+          <div>
+            <label className="label">Nieuwe trainer</label>
+            <select
+              required
+              className="input"
+              value={selectedTrainerId}
+              onChange={e => setSelectedTrainerId(e.target.value)}
+            >
+              <option value="">— Kies trainer —</option>
+              {otherTrainers.map(t => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-surface-border rounded font-heading font-semibold text-sm text-dark hover:bg-surface transition-colors uppercase tracking-wider">
+              Annuleren
+            </button>
+            <button type="submit" disabled={saving || !selectedTrainerId} className="flex-1 btn-primary py-2.5">
+              {saving ? 'Verplaatsen...' : 'Verplaatsen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
   const { api } = useAuth()
   const [stats, setStats] = useState(null)
@@ -140,6 +207,9 @@ export default function AdminDashboard() {
   const [modal, setModal] = useState(null) // null | 'new' | trainer object
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [error, setError] = useState('')
+  const [expandedTrainer, setExpandedTrainer] = useState(null) // trainer id with expanded client list
+  const [trainerClients, setTrainerClients] = useState({}) // { trainerId: [...clients] }
+  const [reassignClient, setReassignClient] = useState(null) // client object to reassign
 
   useEffect(() => {
     loadData()
@@ -174,6 +244,35 @@ export default function AdminDashboard() {
     })
     setModal(null)
     loadData() // refresh stats too
+  }
+
+  async function toggleTrainerClients(trainerId) {
+    if (expandedTrainer === trainerId) {
+      setExpandedTrainer(null)
+      return
+    }
+    setExpandedTrainer(trainerId)
+    if (!trainerClients[trainerId]) {
+      try {
+        const res = await api.get(`/admin/trainers/${trainerId}`)
+        setTrainerClients(prev => ({ ...prev, [trainerId]: res.data.clients }))
+      } catch {
+        setTrainerClients(prev => ({ ...prev, [trainerId]: [] }))
+      }
+    }
+  }
+
+  function handleReassigned(updatedClient) {
+    // Verwijder klant uit de huidige trainer's lijst
+    setTrainerClients(prev => {
+      const updated = {}
+      for (const tid in prev) {
+        updated[tid] = prev[tid].filter(c => c.id !== updatedClient.id)
+      }
+      return updated
+    })
+    setReassignClient(null)
+    loadData() // refresh trainer stats
   }
 
   async function handleDelete(trainer) {
@@ -310,47 +409,83 @@ export default function AdminDashboard() {
             </thead>
             <tbody className="divide-y divide-surface-border">
               {trainers.map(trainer => (
-                <tr key={trainer.id} className="hover:bg-surface transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-heading flex-shrink-0 text-white" style={{ backgroundColor: '#063854' }}>
-                        {trainer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                <React.Fragment key={trainer.id}>
+                  <tr className="hover:bg-surface transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-heading flex-shrink-0 text-white" style={{ backgroundColor: '#063854' }}>
+                          {trainer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                        <span className="font-medium text-dark">{trainer.name}</span>
                       </div>
-                      <span className="font-medium text-dark">{trainer.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-dark-muted">{trainer.email}</td>
-                  <td className="px-4 py-4 text-center text-dark">{trainer.client_count}</td>
-                  <td className="px-4 py-4 text-center text-dark">{trainer.session_count}</td>
-                  <td className="px-4 py-4 text-center">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-heading ${trainer.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
-                      {trainer.is_active ? 'Actief' : 'Inactief'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    {trainer.is_admin ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-heading bg-brand-100 text-brand-700">Admin</span>
-                    ) : (
-                      <span className="text-dark-subtle text-xs">Trainer</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => setModal(trainer)} className="icon-btn text-dark-subtle hover:text-brand-700 transition-colors" title="Bewerken">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                    </td>
+                    <td className="px-6 py-4 text-dark-muted">{trainer.email}</td>
+                    <td className="px-4 py-4 text-center">
+                      <button
+                        onClick={() => toggleTrainerClients(trainer.id)}
+                        className="text-brand-700 font-semibold hover:underline"
+                        title="Klik om klanten te zien"
+                      >
+                        {trainer.client_count}
                       </button>
-                      {!trainer.is_admin && (
-                        <button onClick={() => setDeleteConfirm(trainer)} className="icon-btn text-dark-subtle hover:text-red-600 transition-colors" title="Verwijderen">
+                    </td>
+                    <td className="px-4 py-4 text-center text-dark">{trainer.session_count}</td>
+                    <td className="px-4 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-heading ${trainer.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
+                        {trainer.is_active ? 'Actief' : 'Inactief'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-center">
+                      {trainer.is_admin ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold font-heading bg-brand-100 text-brand-700">Admin</span>
+                      ) : (
+                        <span className="text-dark-subtle text-xs">Trainer</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => setModal(trainer)} className="icon-btn text-dark-subtle hover:text-brand-700 transition-colors" title="Bewerken">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                        {!trainer.is_admin && (
+                          <button onClick={() => setDeleteConfirm(trainer)} className="icon-btn text-dark-subtle hover:text-red-600 transition-colors" title="Verwijderen">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {/* Uitklapbare clientenlijst */}
+                  {expandedTrainer === trainer.id && (
+                    <tr>
+                      <td colSpan={7} className="px-6 pb-4 pt-0" style={{ backgroundColor: 'rgba(6,56,84,0.02)' }}>
+                        {!trainerClients[trainer.id] ? (
+                          <p className="text-xs text-dark-muted py-2">Laden...</p>
+                        ) : trainerClients[trainer.id].length === 0 ? (
+                          <p className="text-xs text-dark-muted py-2">Geen klanten.</p>
+                        ) : (
+                          <div className="mt-2 space-y-1">
+                            {trainerClients[trainer.id].map(client => (
+                              <div key={client.id} className="flex items-center justify-between py-1.5 px-3 rounded" style={{ backgroundColor: 'rgba(6,56,84,0.04)' }}>
+                                <span className="text-sm text-dark">{client.name}</span>
+                                <button
+                                  onClick={() => setReassignClient({ ...client, trainer_id: trainer.id })}
+                                  className="text-xs text-brand-700 hover:underline font-medium"
+                                >
+                                  Verplaatsen
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
               {trainers.length === 0 && (
                 <tr>
@@ -368,6 +503,16 @@ export default function AdminDashboard() {
           trainer={modal === 'new' ? null : modal}
           onClose={() => setModal(null)}
           onSave={handleSaved}
+        />
+      )}
+
+      {/* Reassign modal */}
+      {reassignClient && (
+        <ReassignModal
+          client={reassignClient}
+          trainers={trainers}
+          onClose={() => setReassignClient(null)}
+          onSaved={handleReassigned}
         />
       )}
 

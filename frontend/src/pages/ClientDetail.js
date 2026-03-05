@@ -257,7 +257,7 @@ function ScheduleEditor({ clientId, api }) {
 
 export default function ClientDetail() {
   const { id } = useParams()
-  const { api } = useAuth()
+  const { api, trainer } = useAuth()
   const navigate = useNavigate()
   const [client, setClient] = useState(null)
   const [sessions, setSessions] = useState([])
@@ -313,6 +313,7 @@ export default function ClientDetail() {
   if (!client) return null
 
   const age = calculateAge(client.birth_date)
+  const isOwnClient = client.trainer_id === trainer?.id
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -323,6 +324,16 @@ export default function ClientDetail() {
         </svg>
         Terug
       </button>
+
+      {/* Invaller-banner */}
+      {!isOwnClient && (
+        <div className="mb-4 p-3 rounded-lg flex items-center gap-2 text-sm" style={{ backgroundColor: 'rgba(8,145,178,0.08)', border: '1px solid rgba(8,145,178,0.25)', color: '#0e7490' }}>
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Klant van <strong className="mx-1">{client.trainer_name}</strong> — je kijkt als invaller
+        </div>
+      )}
 
       {/* Client info */}
       <div className="card mb-6">
@@ -362,28 +373,32 @@ export default function ClientDetail() {
                 {client.notes && <p className="text-sm text-dark-subtle mt-2 italic">{client.notes}</p>}
               </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setEditing(true)} className="btn-secondary text-xs flex-1 sm:flex-none">Bewerken</button>
-              <button onClick={handleDeleteClient} className="btn-danger text-xs flex-1 sm:flex-none">Verwijderen</button>
-            </div>
+            {isOwnClient && (
+              <div className="flex gap-2 flex-shrink-0">
+                <button onClick={() => setEditing(true)} className="btn-secondary text-xs flex-1 sm:flex-none">Bewerken</button>
+                <button onClick={handleDeleteClient} className="btn-danger text-xs flex-1 sm:flex-none">Verwijderen</button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Schedule */}
-      <div className="card mb-6">
-        <ScheduleEditor clientId={id} api={api} />
-      </div>
-
-      {/* Duo */}
-      <div className="card mb-6">
-        <DuoEditor
-          clientId={id}
-          client={client}
-          api={api}
-          onPartnerChange={setDuoPartner}
-        />
-      </div>
+      {/* Schedule + Duo: alleen zichtbaar voor eigen trainer */}
+      {isOwnClient && (
+        <>
+          <div className="card mb-6">
+            <ScheduleEditor clientId={id} api={api} />
+          </div>
+          <div className="card mb-6">
+            <DuoEditor
+              clientId={id}
+              client={client}
+              api={api}
+              onPartnerChange={setDuoPartner}
+            />
+          </div>
+        </>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 mb-6">

@@ -28,14 +28,29 @@ router.post('/', (req, res) => {
   res.status(201).json(client)
 })
 
+// GET /api/clients/search?q=naam — zoek in ALLE klanten (voor invallen / overname)
+router.get('/search', (req, res) => {
+  const q = (req.query.q || '').trim()
+  if (q.length < 2) return res.json([])
+  const results = db.prepare(`
+    SELECT c.*, t.name as trainer_name
+    FROM clients c
+    JOIN trainers t ON t.id = c.trainer_id
+    WHERE c.name LIKE ?
+    ORDER BY c.name ASC LIMIT 20
+  `).all(`%${q}%`)
+  res.json(results)
+})
+
 // GET /api/clients/:id
 router.get('/:id', (req, res) => {
   const client = db.prepare(`
-    SELECT c.*, p.name as duo_partner_name
+    SELECT c.*, p.name as duo_partner_name, t.name as trainer_name
     FROM clients c
     LEFT JOIN clients p ON p.id = c.duo_partner_id
-    WHERE c.id = ? AND c.trainer_id = ?
-  `).get(req.params.id, req.trainer.id)
+    JOIN trainers t ON t.id = c.trainer_id
+    WHERE c.id = ?
+  `).get(req.params.id)
   if (!client) return res.status(404).json({ error: 'Client not found' })
   res.json(client)
 })
@@ -178,8 +193,8 @@ router.delete('/:id/duo', (req, res) => {
 // GET /api/clients/:id/sessions
 router.get('/:id/sessions', (req, res) => {
   const client = db.prepare(
-    'SELECT id FROM clients WHERE id = ? AND trainer_id = ?'
-  ).get(req.params.id, req.trainer.id)
+    'SELECT id FROM clients WHERE id = ?'
+  ).get(req.params.id)
   if (!client) return res.status(404).json({ error: 'Client not found' })
 
   const sessions = db.prepare(

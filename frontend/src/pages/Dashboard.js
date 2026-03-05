@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -28,6 +28,13 @@ export default function Dashboard() {
   const [form, setForm] = useState({ name: '', email: '', birth_date: '', notes: '' })
   const [saving, setSaving] = useState(false)
 
+  // Zoek-modus: alle klanten doorzoekbaar (ook van collega's)
+  const [searchMode, setSearchMode] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const searchRef = useRef(null)
+
   const today = new Date()
   const todayDow = today.getDay()
 
@@ -40,6 +47,33 @@ export default function Dashboard() {
       setTodayClients(todayRes.data)
     }).finally(() => setLoading(false))
   }, [api])
+
+  const handleSearch = useCallback(async (q) => {
+    setSearchQuery(q)
+    if (q.length < 2) { setSearchResults([]); return }
+    setSearching(true)
+    try {
+      const res = await api.get(`/clients/search?q=${encodeURIComponent(q)}`)
+      setSearchResults(res.data)
+    } catch {
+      setSearchResults([])
+    } finally {
+      setSearching(false)
+    }
+  }, [api])
+
+  function openSearchMode() {
+    setSearchMode(true)
+    setSearchQuery('')
+    setSearchResults([])
+    setTimeout(() => searchRef.current?.focus(), 50)
+  }
+
+  function closeSearchMode() {
+    setSearchMode(false)
+    setSearchQuery('')
+    setSearchResults([])
+  }
 
   async function handleAddClient(e) {
     e.preventDefault()
@@ -69,13 +103,102 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-brand-700">Dashboard</h1>
           <p className="text-dark-muted mt-1">Welkom terug, {trainer?.name}!</p>
         </div>
-        <button onClick={() => setShowAddForm(true)} className="btn-primary">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Klant toevoegen
-        </button>
+        <div className="flex gap-2">
+          <button onClick={openSearchMode} className="btn-secondary text-sm">
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            Zoek klant
+          </button>
+          <button onClick={() => setShowAddForm(true)} className="btn-primary">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Klant toevoegen</span>
+            <span className="sm:hidden">Toevoegen</span>
+          </button>
+        </div>
       </div>
+
+      {/* Zoek alle klanten (ook van collega's) */}
+      {searchMode && (
+        <div className="card mb-6" style={{ borderLeft: '4px solid #0891b2' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold font-heading text-brand-700">Klant zoeken</h3>
+            <button onClick={closeSearchMode} className="text-dark-muted hover:text-dark transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="relative mb-4">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+            </svg>
+            <input
+              ref={searchRef}
+              type="text"
+              className="input pl-9"
+              placeholder="Typ een naam..."
+              value={searchQuery}
+              onChange={e => handleSearch(e.target.value)}
+            />
+          </div>
+          {searching && <p className="text-sm text-dark-muted">Zoeken...</p>}
+          {!searching && searchQuery.length >= 2 && searchResults.length === 0 && (
+            <p className="text-sm text-dark-muted">Geen klanten gevonden voor "{searchQuery}"</p>
+          )}
+          {searchResults.length > 0 && (
+            <div className="space-y-2">
+              {searchResults.map(client => {
+                const isOwn = client.trainer_id === trainer?.id
+                const age = calculateAge(client.birth_date)
+                return (
+                  <div
+                    key={client.id}
+                    className="flex items-center gap-3 p-3 rounded-lg"
+                    style={{ backgroundColor: 'rgba(6,56,84,0.04)', border: '1px solid rgba(6,56,84,0.1)' }}
+                  >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold font-heading flex-shrink-0 text-white" style={{ backgroundColor: isOwn ? '#063854' : '#64748b' }}>
+                      {client.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold font-heading text-dark text-sm truncate">{client.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {age !== null && <span className="text-xs text-dark-muted">{age} jaar</span>}
+                        {!isOwn && (
+                          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: 'rgba(100,116,139,0.12)', color: '#475569' }}>
+                            Trainer: {client.trainer_name}
+                          </span>
+                        )}
+                        {isOwn && (
+                          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: 'rgba(6,56,84,0.1)', color: '#063854' }}>
+                            Jouw klant
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => navigate(`/clients/${client.id}`)}
+                        className="btn-secondary text-xs px-3 py-2"
+                      >
+                        Bekijken
+                      </button>
+                      <button
+                        onClick={() => navigate(`/log-workout?clientId=${client.id}`)}
+                        className="btn-primary text-xs px-3 py-2"
+                      >
+                        Log
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Vandaag */}
       <div className="card mb-8" style={{ borderLeft: '4px solid #063854' }}>

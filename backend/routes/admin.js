@@ -124,6 +124,26 @@ router.delete('/trainers/:id', (req, res) => {
   res.json({ success: true })
 })
 
+// PUT /api/admin/clients/:id/reassign — verplaats klant naar andere trainer
+router.put('/clients/:id/reassign', (req, res) => {
+  const client = db.prepare('SELECT id, name FROM clients WHERE id = ?').get(req.params.id)
+  if (!client) return res.status(404).json({ error: 'Klant niet gevonden' })
+
+  const { trainer_id } = req.body
+  if (!trainer_id) return res.status(400).json({ error: 'trainer_id is verplicht' })
+
+  const trainer = db.prepare('SELECT id FROM trainers WHERE id = ? AND is_active = 1').get(trainer_id)
+  if (!trainer) return res.status(404).json({ error: 'Trainer niet gevonden of inactief' })
+
+  db.prepare('UPDATE clients SET trainer_id = ? WHERE id = ?').run(trainer_id, req.params.id)
+  const updated = db.prepare(`
+    SELECT c.*, t.name as trainer_name
+    FROM clients c JOIN trainers t ON t.id = c.trainer_id
+    WHERE c.id = ?
+  `).get(req.params.id)
+  res.json(updated)
+})
+
 // GET /api/admin/stats — global platform stats
 router.get('/stats', (req, res) => {
   const stats = {

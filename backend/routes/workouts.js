@@ -12,8 +12,8 @@ router.post('/sessions', (req, res) => {
     return res.status(400).json({ error: 'client_id and date are required' })
   }
   const client = db.prepare(
-    'SELECT id FROM clients WHERE id = ? AND trainer_id = ?'
-  ).get(client_id, req.trainer.id)
+    'SELECT id FROM clients WHERE id = ?'
+  ).get(client_id)
   if (!client) return res.status(404).json({ error: 'Client not found' })
 
   const result = db.prepare(
@@ -119,8 +119,8 @@ router.delete('/sets/:id', (req, res) => {
 // GET /api/workouts/progress/:clientId/:exerciseId
 router.get('/progress/:clientId/:exerciseId', (req, res) => {
   const client = db.prepare(
-    'SELECT id FROM clients WHERE id = ? AND trainer_id = ?'
-  ).get(req.params.clientId, req.trainer.id)
+    'SELECT id FROM clients WHERE id = ?'
+  ).get(req.params.clientId)
   if (!client) return res.status(404).json({ error: 'Client not found' })
 
   const data = db.prepare(`
@@ -145,8 +145,8 @@ router.get('/progress/:clientId/:exerciseId', (req, res) => {
 // GET /api/workouts/client/:clientId/exercises  — exercises a client has done
 router.get('/client/:clientId/exercises', (req, res) => {
   const client = db.prepare(
-    'SELECT id FROM clients WHERE id = ? AND trainer_id = ?'
-  ).get(req.params.clientId, req.trainer.id)
+    'SELECT id FROM clients WHERE id = ?'
+  ).get(req.params.clientId)
   if (!client) return res.status(404).json({ error: 'Client not found' })
 
   const exercises = db.prepare(`
@@ -166,8 +166,8 @@ router.get('/client/:clientId/exercises', (req, res) => {
 // Returns sets from the most recent session where client did this exercise
 router.get('/last-session/:clientId/:exerciseId', (req, res) => {
   const client = db.prepare(
-    'SELECT id FROM clients WHERE id = ? AND trainer_id = ?'
-  ).get(req.params.clientId, req.trainer.id)
+    'SELECT id FROM clients WHERE id = ?'
+  ).get(req.params.clientId)
   if (!client) return res.status(404).json({ error: 'Client not found' })
 
   // Get the most recent session id + date that includes this exercise

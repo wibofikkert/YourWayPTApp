@@ -295,15 +295,24 @@ export default function LogWorkout() {
 
   useEffect(() => {
     Promise.all([api.get('/clients'), api.get('/exercises')])
-      .then(([c, e]) => {
-        setClients(c.data)
+      .then(async ([c, e]) => {
+        let clientList = c.data
+        setClients(clientList)
         setExercises(e.data)
         if (presetClientId) {
-          const client = c.data.find(cl => cl.id === parseInt(presetClientId))
+          let client = clientList.find(cl => cl.id === parseInt(presetClientId))
+          if (!client) {
+            // Klant van een collega — haal op via directe lookup (invaller-modus)
+            try {
+              const r = await api.get(`/clients/${presetClientId}`)
+              client = r.data
+              setClients(prev => [...prev, r.data])
+            } catch { /* negeer */ }
+          }
           if (client) setSelectedClient(client)
         }
         if (presetDuoPartnerId) {
-          const partner = c.data.find(cl => cl.id === parseInt(presetDuoPartnerId))
+          const partner = clientList.find(cl => cl.id === parseInt(presetDuoPartnerId))
           if (partner) {
             setDuoPartner(partner)
             setLogForDuo(true)
