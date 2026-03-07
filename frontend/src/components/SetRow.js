@@ -13,9 +13,10 @@ export default function SetRow({ setNumber, values, onChange, onRemove, canRemov
           <input
             type="number"
             inputMode="numeric"
-            min="1"
-            value={values.reps}
-            onChange={e => onChange({ ...values, reps: parseInt(e.target.value) || 1 })}
+            min="0"
+            placeholder="—"
+            value={values.reps ?? ''}
+            onChange={e => onChange({ ...values, reps: e.target.value === '' ? null : parseInt(e.target.value) })}
             className="input text-center px-1 sm:px-2 text-sm"
           />
         </div>
@@ -26,8 +27,9 @@ export default function SetRow({ setNumber, values, onChange, onRemove, canRemov
             inputMode="decimal"
             min="0"
             step="0.5"
-            value={values.weight_kg}
-            onChange={e => onChange({ ...values, weight_kg: parseFloat(e.target.value) || 0 })}
+            placeholder="—"
+            value={values.weight_kg ?? ''}
+            onChange={e => onChange({ ...values, weight_kg: e.target.value === '' ? null : parseFloat(e.target.value) })}
             className="input text-center px-1 sm:px-2 text-sm"
           />
         </div>

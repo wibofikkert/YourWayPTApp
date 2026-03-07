@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import ExerciseSearch from '../components/ExerciseSearch'
 import SetRow from '../components/SetRow'
 
-const DEFAULT_SET = { reps: 10, weight_kg: 0, rpe: null }
+const DEFAULT_SET = { reps: null, weight_kg: null, rpe: null }
 
 // Format days-ago label from a date string
 function daysAgoLabel(dateStr) {
@@ -402,8 +402,8 @@ export default function LogWorkout() {
       sets.map((set, idx) => ({
         exercise_id: exercise.id,
         set_number: idx + 1,
-        reps: set.reps,
-        weight_kg: set.weight_kg,
+        reps: set.reps ?? 0,
+        weight_kg: set.weight_kg ?? 0,
         rpe: set.rpe || null,
       }))
     )

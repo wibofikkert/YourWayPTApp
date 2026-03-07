@@ -64,6 +64,30 @@ router.delete('/sessions/:id', (req, res) => {
   res.json({ success: true })
 })
 
+// PUT /api/workouts/sessions/:id/sets — replace all sets for a session
+router.put('/sessions/:id/sets', (req, res) => {
+  const session = db.prepare(
+    'SELECT id FROM workout_sessions WHERE id = ? AND trainer_id = ?'
+  ).get(req.params.id, req.trainer.id)
+  if (!session) return res.status(404).json({ error: 'Session not found' })
+
+  const sets = Array.isArray(req.body) ? req.body : [req.body]
+
+  const replace = db.transaction((sets) => {
+    db.prepare('DELETE FROM workout_sets WHERE session_id = ?').run(req.params.id)
+    const insert = db.prepare(
+      'INSERT INTO workout_sets (session_id, exercise_id, set_number, reps, weight_kg, rpe) VALUES (?, ?, ?, ?, ?, ?)'
+    )
+    for (const s of sets) {
+      insert.run(req.params.id, s.exercise_id, s.set_number, s.reps, s.weight_kg, s.rpe || null)
+    }
+  })
+  replace(sets)
+
+  const allSets = db.prepare('SELECT * FROM workout_sets WHERE session_id = ?').all(req.params.id)
+  res.json(allSets)
+})
+
 // POST /api/workouts/sessions/:id/sets
 router.post('/sessions/:id/sets', (req, res) => {
   const session = db.prepare(
