@@ -11,7 +11,6 @@ import LogWorkout from './pages/LogWorkout'
 import Progress from './pages/Progress'
 import Exercises from './pages/Exercises'
 import AdminDashboard from './pages/AdminDashboard'
-import EditWorkout from './pages/EditWorkout'
 
 export default function App() {
   return (
@@ -24,7 +23,6 @@ export default function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/clients/:id" element={<ClientDetail />} />
               <Route path="/log-workout" element={<LogWorkout />} />
-              <Route path="/edit-workout/:sessionId" element={<EditWorkout />} />
               <Route path="/progress/:clientId" element={<Progress />} />
               <Route path="/progress/:clientId/:exerciseId" element={<Progress />} />
               <Route path="/exercises" element={<Exercises />} />

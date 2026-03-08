@@ -35,12 +35,6 @@
     /* 16px prevents iOS auto-zoom on input focus */
     font-size: 16px;
   }
-  input[type="date"].input {
-    /* Prevent iOS from rendering a non-resizable native date button that overflows */
-    -webkit-appearance: none;
-    appearance: none;
-    min-width: 0;
-  }
   .label {
     @apply block text-xs font-semibold font-heading text-dark-light mb-1 tracking-wider uppercase;
   }
