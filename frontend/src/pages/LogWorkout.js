@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import ExerciseSearch from '../components/ExerciseSearch'
 import SetRow from '../components/SetRow'
 
-const DEFAULT_SET = { reps: 10, weight_kg: 0, rpe: null }
+const DEFAULT_SET = { reps: '', weight_kg: '', rpe: null }
 
 // Format days-ago label from a date string
 function daysAgoLabel(dateStr) {
@@ -292,34 +292,72 @@ export default function LogWorkout() {
 
   const presetClientId = searchParams.get('clientId')
   const presetDuoPartnerId = searchParams.get('duoPartnerId')
+  const editSessionId = searchParams.get('editSession')
+  const isEditMode = !!editSessionId
 
   useEffect(() => {
-    Promise.all([api.get('/clients'), api.get('/exercises')])
-      .then(async ([c, e]) => {
-        let clientList = c.data
+    const sessionFetch = editSessionId
+      ? api.get(`/workouts/sessions/${editSessionId}`)
+      : Promise.resolve(null)
+
+    Promise.all([api.get('/clients'), api.get('/exercises'), sessionFetch])
+      .then(async ([c, e, sessionRes]) => {
+        const clientList = c.data
+        const exerciseList = e.data
         setClients(clientList)
-        setExercises(e.data)
-        if (presetClientId) {
-          let client = clientList.find(cl => cl.id === parseInt(presetClientId))
+        setExercises(exerciseList)
+
+        if (sessionRes) {
+          // Edit mode: pre-fill from existing session
+          const session = sessionRes.data
+          let client = clientList.find(cl => cl.id === session.client_id)
           if (!client) {
-            // Klant van een collega — haal op via directe lookup (invaller-modus)
             try {
-              const r = await api.get(`/clients/${presetClientId}`)
+              const r = await api.get(`/clients/${session.client_id}`)
               client = r.data
               setClients(prev => [...prev, r.data])
             } catch { /* negeer */ }
           }
           if (client) setSelectedClient(client)
-        }
-        if (presetDuoPartnerId) {
-          const partner = clientList.find(cl => cl.id === parseInt(presetDuoPartnerId))
-          if (partner) {
-            setDuoPartner(partner)
-            setLogForDuo(true)
+          setDate(session.date)
+          setNotes(session.notes || '')
+          // Group sets by exercise_id to rebuild primaryExercises
+          const byExercise = {}
+          for (const s of (session.sets || [])) {
+            if (!byExercise[s.exercise_id]) {
+              byExercise[s.exercise_id] = {
+                exercise: exerciseList.find(ex => ex.id === s.exercise_id) || {
+                  id: s.exercise_id, name: s.exercise_name, muscle_group: s.muscle_group, equipment: ''
+                },
+                sets: []
+              }
+            }
+            byExercise[s.exercise_id].sets.push({ reps: s.reps, weight_kg: s.weight_kg, rpe: s.rpe || null })
+          }
+          setPrimaryExercises(Object.values(byExercise))
+        } else {
+          // New workout mode
+          if (presetClientId) {
+            let client = clientList.find(cl => cl.id === parseInt(presetClientId))
+            if (!client) {
+              try {
+                const r = await api.get(`/clients/${presetClientId}`)
+                client = r.data
+                setClients(prev => [...prev, r.data])
+              } catch { /* negeer */ }
+            }
+            if (client) setSelectedClient(client)
+          }
+          if (presetDuoPartnerId) {
+            const partner = clientList.find(cl => cl.id === parseInt(presetDuoPartnerId))
+            if (partner) {
+              setDuoPartner(partner)
+              setLogForDuo(true)
+            }
           }
         }
       })
-  }, [api, presetClientId, presetDuoPartnerId])
+  }, [api, presetClientId, presetDuoPartnerId, editSessionId])
 
   const fetchLastSession = useCallback(async (clientId, exerciseId) => {
     const key = `${clientId}_${exerciseId}`
@@ -402,8 +440,8 @@ export default function LogWorkout() {
       sets.map((set, idx) => ({
         exercise_id: exercise.id,
         set_number: idx + 1,
-        reps: set.reps,
-        weight_kg: set.weight_kg,
+        reps: set.reps === '' || set.reps === null || set.reps === undefined ? 0 : Number(set.reps),
+        weight_kg: set.weight_kg === '' || set.weight_kg === null || set.weight_kg === undefined ? 0 : Number(set.weight_kg),
         rpe: set.rpe || null,
       }))
     )
@@ -416,20 +454,28 @@ export default function LogWorkout() {
     setSaving(true)
     setError('')
     try {
-      const sessionRes = await api.post('/workouts/sessions', {
-        client_id: selectedClient.id,
-        date,
-        notes: notes || undefined,
-      })
-      await api.post(`/workouts/sessions/${sessionRes.data.id}/sets`, buildSetsPayload(primaryExercises))
-
-      if (logForDuo && duoPartner && duoExercises.length > 0) {
-        const duoSessionRes = await api.post('/workouts/sessions', {
-          client_id: duoPartner.id,
+      if (isEditMode) {
+        // Edit: update session metadata, replace all sets
+        await api.put(`/workouts/sessions/${editSessionId}`, { date, notes: notes || undefined })
+        await api.delete(`/workouts/sessions/${editSessionId}/sets`)
+        await api.post(`/workouts/sessions/${editSessionId}/sets`, buildSetsPayload(primaryExercises))
+      } else {
+        // New workout
+        const sessionRes = await api.post('/workouts/sessions', {
+          client_id: selectedClient.id,
           date,
           notes: notes || undefined,
         })
-        await api.post(`/workouts/sessions/${duoSessionRes.data.id}/sets`, buildSetsPayload(duoExercises))
+        await api.post(`/workouts/sessions/${sessionRes.data.id}/sets`, buildSetsPayload(primaryExercises))
+
+        if (logForDuo && duoPartner && duoExercises.length > 0) {
+          const duoSessionRes = await api.post('/workouts/sessions', {
+            client_id: duoPartner.id,
+            date,
+            notes: notes || undefined,
+          })
+          await api.post(`/workouts/sessions/${duoSessionRes.data.id}/sets`, buildSetsPayload(duoExercises))
+        }
       }
 
       navigate(`/clients/${selectedClient.id}`)
@@ -447,7 +493,9 @@ export default function LogWorkout() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold font-heading text-brand-700">Workout loggen</h1>
+        <h1 className="text-2xl font-bold font-heading text-brand-700">
+          {isEditMode ? 'Workout aanpassen' : 'Workout loggen'}
+        </h1>
         <button onClick={() => navigate(-1)} className="btn-secondary text-sm">Annuleren</button>
       </div>
 
@@ -461,29 +509,35 @@ export default function LogWorkout() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="label">Klant *</label>
-            <select
-              className="input"
-              value={selectedClient?.id || ''}
-              onChange={e => {
-                const c = clients.find(cl => cl.id === parseInt(e.target.value))
-                setSelectedClient(c || null)
-                setPrimaryExercises([])
-                setDuoExercises([])
-                if (c && c.duo_partner_id) {
-                  const partner = clients.find(cl => cl.id === c.duo_partner_id)
-                  setDuoPartner(partner || null)
-                  setLogForDuo(!!partner)
-                } else {
-                  setDuoPartner(null)
-                  setLogForDuo(false)
-                }
-              }}
-            >
-              <option value="">Selecteer klant...</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            {isEditMode ? (
+              <div className="input bg-surface-hover text-dark-muted cursor-default">
+                {selectedClient?.name || '…'}
+              </div>
+            ) : (
+              <select
+                className="input"
+                value={selectedClient?.id || ''}
+                onChange={e => {
+                  const c = clients.find(cl => cl.id === parseInt(e.target.value))
+                  setSelectedClient(c || null)
+                  setPrimaryExercises([])
+                  setDuoExercises([])
+                  if (c && c.duo_partner_id) {
+                    const partner = clients.find(cl => cl.id === c.duo_partner_id)
+                    setDuoPartner(partner || null)
+                    setLogForDuo(!!partner)
+                  } else {
+                    setDuoPartner(null)
+                    setLogForDuo(false)
+                  }
+                }}
+              >
+                <option value="">Selecteer klant...</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className="label">Datum *</label>
@@ -495,8 +549,8 @@ export default function LogWorkout() {
           </div>
         </div>
 
-        {/* Duo toggle */}
-        {duoPartner && (
+        {/* Duo toggle — alleen bij nieuwe workout */}
+        {!isEditMode && duoPartner && (
           <div className="mt-4 pt-4 border-t border-surface-border">
             <button
               type="button"
@@ -529,7 +583,7 @@ export default function LogWorkout() {
       </div>
 
       {/* Exercise panels */}
-      {logForDuo && duoPartner ? (
+      {!isEditMode && logForDuo && duoPartner ? (
         <DuoPanels
           selectedClient={selectedClient}
           duoPartner={duoPartner}
@@ -593,7 +647,7 @@ export default function LogWorkout() {
               )}
             </div>
             <button onClick={handleSave} disabled={saving} className="btn-primary flex-shrink-0">
-              {saving ? 'Opslaan...' : logForDuo && duoPartner ? 'Duo opslaan' : 'Workout opslaan'}
+              {saving ? 'Opslaan...' : isEditMode ? 'Aanpassingen opslaan' : (!isEditMode && logForDuo && duoPartner ? 'Duo opslaan' : 'Workout opslaan')}
             </button>
           </div>
         </div>

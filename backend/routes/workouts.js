@@ -88,6 +88,16 @@ router.post('/sessions/:id/sets', (req, res) => {
   res.status(201).json(allSets)
 })
 
+// DELETE /api/workouts/sessions/:id/sets — remove all sets for a session (used when replacing sets on edit)
+router.delete('/sessions/:id/sets', (req, res) => {
+  const session = db.prepare(
+    'SELECT id FROM workout_sessions WHERE id = ? AND trainer_id = ?'
+  ).get(req.params.id, req.trainer.id)
+  if (!session) return res.status(404).json({ error: 'Session not found' })
+  db.prepare('DELETE FROM workout_sets WHERE session_id = ?').run(req.params.id)
+  res.json({ success: true })
+})
+
 // PUT /api/workouts/sets/:id
 router.put('/sets/:id', (req, res) => {
   const set = db.prepare(`
